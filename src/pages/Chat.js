@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { getChatCompletion } from '../utils/openai';
 
 const Chat = () => {
     const [messages, setMessages] = useState([]);
     const [inputMessage, setInputMessage] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [showStartMenu, setShowStartMenu] = useState(true);
     const messagesEndRef = useRef(null);
 
     const scrollToBottom = () => {
@@ -16,9 +16,45 @@ const Chat = () => {
         scrollToBottom();
     }, [messages]);
 
-    // OpenAI API에 보낼 메시지 히스토리 형식으로 변환
-    const formatMessages = (msgs) => {
-        return msgs.map(msg => ({
+    const handleButtonClick = async (topic) => {
+        setShowStartMenu(false);
+        
+        // 선택한 주제에 따른 초기 메시지 설정
+        const initialMessages = {
+            '사용법': '라이브데이터 AI의 사용법을 알려주세요.',
+            '힌트 찾기': '힌트를 찾는 방법을 알려주세요.',
+            '개념 이해': '라이브데이터 AI의 주요 개념을 설명해주세요.',
+            '문제 해설': '문제 해설 방법을 알려주세요.'
+        };
+
+        // 각 주제별 AI 응답 메시지
+        const aiResponses = {
+            '사용법': '라이브데이터 AI 사용법에 대해 알려드리겠습니다. 어떤 부분이 궁금하신가요?\n\n1. 문제 입력 방법\n2. 힌트 요청 방법\n3. 답안 제출 방법',
+            '힌트 찾기': '문제 해결을 위한 힌트를 찾아드릴게요. 몇 번 문제에 대한 힌트가 필요하신가요?',
+            '개념 이해': '개념 학습을 도와드리겠습니다. 어떤 개념에 대해 궁금하신가요?\n\n예시: 함수, 배열, 반복문 등',
+            '문제 해설': '문제 해설을 도와드리겠습니다. 몇 번 문제에 대해 설명해드릴까요?'
+        };
+
+        // 선택한 버튼에 해당하는 메시지로 대화 시작
+        if (initialMessages[topic]) {
+            const userMessage = {
+                id: Date.now(),
+                text: initialMessages[topic],
+                isUser: true
+            };
+
+            const aiMessage = {
+                id: Date.now() + 1,
+                text: aiResponses[topic],
+                isUser: false
+            };
+
+            setMessages([userMessage, aiMessage]);
+        }
+    };
+
+    const formatMessagesForGPT = (messages) => {
+        return messages.map(msg => ({
             role: msg.isUser ? 'user' : 'assistant',
             content: msg.text
         }));
@@ -38,11 +74,20 @@ const Chat = () => {
         setIsLoading(true);
 
         try {
-            // 이전 대화 내용을 포함하여 API 요청
+            // 전체 대화 히스토리를 GPT에 전달
             const chatHistory = [...messages, newMessage];
-            const formattedMessages = formatMessages(chatHistory);
+            const formattedMessages = formatMessagesForGPT(chatHistory);
             
-            const response = await getChatCompletion(formattedMessages);
+            // 시스템 메시지 추가
+            const systemMessage = {
+                role: 'system',
+                content: `당신은 라이브데이터 AI 학습 도우미입니다. 
+                학생들의 프로그래밍 학습을 돕고, 문제 해결 방법을 안내하며, 
+                직접적인 답을 주지 않고 힌트를 통해 스스로 해결할 수 있도록 도와주세요.
+                항상 친절하고 이해하기 쉽게 설명해주세요.`
+            };
+
+            const response = await getChatCompletion([systemMessage, ...formattedMessages]);
             
             setMessages(prev => [...prev, {
                 id: Date.now(),
@@ -50,75 +95,113 @@ const Chat = () => {
                 isUser: false
             }]);
         } catch (error) {
-            console.error('메시지 전송 오류:', error);
-            alert('메시지 전송 중 오류가 발생했습니다.');
+            console.error('Error:', error);
+            setMessages(prev => [...prev, {
+                id: Date.now(),
+                text: "죄송합니다. 오류가 발생했습니다. 다시 시도해 주세요.",
+                isUser: false
+            }]);
         } finally {
             setIsLoading(false);
         }
     };
 
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="bg-white p-4 rounded-lg shadow-md h-[100vh] w-full max-w-sm sm:max-w-md flex flex-col">
-          <div className="flex-1 flex flex-col overflow-hidden">
-            <h1 className="text-center text-xl font-bold mb-4 pb-4 border-b">SuMA</h1>
-            
-            {/* 채팅 메시지 영역 */}
-            <div className="flex-1 overflow-y-auto px-2">
-                <div className="space-y-4 py-2">
-                    {messages.map(message => (
-                        <div 
-                            key={message.id}
-                            className={`flex ${message.isUser ? 'justify-end' : 'justify-start'}`}
-                        >
-                            <div 
-                                className={`max-w-[70%] rounded-lg p-3 break-words ${
-                                    message.isUser 
-                                        ? 'bg-blue-500 text-white' 
-                                        : 'bg-gray-100 text-gray-800'
-                                }`}
-                            >
-                                {message.text}
+        <div className="flex items-center justify-center h-screen">
+            <div className="bg-white p-4 rounded-lg shadow-md h-screen w-full max-w-sm sm:max-w-md flex flex-col">
+                <div className="flex-1 flex flex-col overflow-hidden">
+                    <h1 className="text-center text-xl font-bold mb-4 pb-4 border-b">Laivdata AI</h1>
+                    
+                    {showStartMenu ? (
+                        // 시작 메뉴
+                        <div className="flex-1 flex flex-col items-center justify-center gap-4">
+                            <div className="text-xl mb-8 font-bold">무엇을 도와드릴까요?</div>
+                            <div className="grid grid-cols-2 gap-4 w-full max-w-xs">
+                                <button 
+                                    onClick={() => handleButtonClick('사용법')}
+                                    className="w-full py-3 px-4 bg-white border-2 border-gray-200 rounded-lg hover:bg-gray-50"
+                                >
+                                    사용법
+                                </button>
+                                <button 
+                                    onClick={() => handleButtonClick('힌트 찾기')}
+                                    className="w-full py-3 px-4 bg-white border-2 border-gray-200 rounded-lg hover:bg-gray-50"
+                                >
+                                    힌트 찾기
+                                </button>
+                                <button 
+                                    onClick={() => handleButtonClick('개념 이해')}
+                                    className="w-full py-3 px-4 bg-white border-2 border-gray-200 rounded-lg hover:bg-gray-50"
+                                >
+                                    개념 이해
+                                </button>
+                                <button 
+                                    onClick={() => handleButtonClick('문제 해설')}
+                                    className="w-full py-3 px-4 bg-white border-2 border-gray-200 rounded-lg hover:bg-gray-50"
+                                >
+                                    문제 해설
+                                </button>
                             </div>
                         </div>
-                    ))}
-                    {isLoading && (
-                        <div className="flex justify-start">
-                            <div className="bg-gray-100 text-gray-800 rounded-lg p-3">
-                                입력 중...
+                    ) : (
+                        // 채팅 인터페이스
+                        <>
+                            <div className="flex-1 overflow-y-auto px-2">
+                                <div className="space-y-4 py-2">
+                                    {messages.map(message => (
+                                        <div 
+                                            key={message.id}
+                                            className={`flex ${message.isUser ? 'justify-end' : 'justify-start'}`}
+                                        >
+                                            <div 
+                                                className={`max-w-[70%] rounded-lg p-3 break-words ${
+                                                    message.isUser 
+                                                        ? 'bg-blue-500 text-white' 
+                                                        : 'bg-gray-100 text-gray-800'
+                                                }`}
+                                            >
+                                                {message.text}
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {isLoading && (
+                                        <div className="flex justify-start">
+                                            <div className="bg-gray-100 text-gray-800 rounded-lg p-3">
+                                                입력 중...
+                                            </div>
+                                        </div>
+                                    )}
+                                    <div ref={messagesEndRef} />
+                                </div>
                             </div>
-                        </div>
+                            <div className="border-t pt-4 mt-4">
+                                <div className="flex gap-2">
+                                    <input
+                                        type="text"
+                                        value={inputMessage}
+                                        onChange={(e) => setInputMessage(e.target.value)}
+                                        onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                                        placeholder="질문을 입력하세요"
+                                        className="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        disabled={isLoading}
+                                    />
+                                    <button 
+                                        onClick={handleSendMessage}
+                                        className={`px-4 py-2 text-white rounded-lg ${
+                                            isLoading ? 'bg-gray-400' : 'bg-blue-500 hover:bg-blue-600'
+                                        }`}
+                                        disabled={isLoading}
+                                    >
+                                        전송
+                                    </button>
+                                </div>
+                            </div>
+                        </>
                     )}
-                    <div ref={messagesEndRef} />
                 </div>
             </div>
-          </div>
-          
-          {/* 입력창 영역 */}
-          <div className="border-t pt-4 mt-4">
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={inputMessage}
-                onChange={(e) => setInputMessage(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                placeholder="메시지를 입력하세요"
-                className="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                disabled={isLoading}
-              />
-              <button 
-                onClick={handleSendMessage}
-                className={`px-4 py-2 text-white rounded-lg ${
-                    isLoading ? 'bg-gray-400' : 'bg-blue-500 hover:bg-blue-600'
-                }`}
-                disabled={isLoading}
-              >
-                전송
-              </button>
-            </div>
-          </div>
         </div>
-      </div>
     );
 };
+
 export default Chat;
