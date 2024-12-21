@@ -120,11 +120,22 @@ const Chat = () => {
         }
     };
 
+    const handleTitleClick = () => {
+        if (isAuthenticated) {
+            setShowStartMenu(true);
+        }
+    };
+
     return (
         <div className="flex items-center justify-center h-screen">
             <div className="bg-white p-4 rounded-lg shadow-md h-screen w-full max-w-sm sm:max-w-md flex flex-col">
                 <div className="flex-1 flex flex-col overflow-hidden">
-                    <h1 className="text-center text-xl font-bold mb-4 pb-4 border-b">Laivdata AI</h1>
+                    <h1 
+                        className="text-center text-xl font-bold mb-4 pb-4 border-b cursor-pointer"
+                        onClick={handleTitleClick}
+                    >
+                        Laivdata AI
+                    </h1>
                     
                     {!isAuthenticated ? (
                         <div className="flex flex-col items-center justify-center gap-4">
@@ -132,6 +143,7 @@ const Chat = () => {
                                 type="password"
                                 value={password}
                                 onChange={handlePasswordChange}
+                                onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
                                 placeholder="비밀번호를 입력하세요"
                                 className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                             />
