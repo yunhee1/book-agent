@@ -7,6 +7,8 @@ const Chat = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [showStartMenu, setShowStartMenu] = useState(true);
     const messagesEndRef = useRef(null);
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [password, setPassword] = useState('');
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -106,96 +108,128 @@ const Chat = () => {
         }
     };
 
+    const handlePasswordChange = (e) => {
+        setPassword(e.target.value);
+    };
+
+    const handleLogin = () => {
+        if (password === '123456') {
+            setIsAuthenticated(true);
+        } else {
+            alert('비밀번호가 틀렸습니다.');
+        }
+    };
+
     return (
         <div className="flex items-center justify-center h-screen">
             <div className="bg-white p-4 rounded-lg shadow-md h-screen w-full max-w-sm sm:max-w-md flex flex-col">
                 <div className="flex-1 flex flex-col overflow-hidden">
                     <h1 className="text-center text-xl font-bold mb-4 pb-4 border-b">Laivdata AI</h1>
                     
-                    {showStartMenu ? (
-                        // 시작 메뉴
-                        <div className="flex-1 flex flex-col items-center justify-center gap-4">
-                            <div className="text-xl mb-8 font-bold">무엇을 도와드릴까요?</div>
-                            <div className="grid grid-cols-2 gap-4 w-full max-w-xs">
-                                <button 
-                                    onClick={() => handleButtonClick('사용법')}
-                                    className="w-full py-3 px-4 bg-white border-2 border-gray-200 rounded-lg hover:bg-gray-50"
-                                >
-                                    사용법
-                                </button>
-                                <button 
-                                    onClick={() => handleButtonClick('힌트 찾기')}
-                                    className="w-full py-3 px-4 bg-white border-2 border-gray-200 rounded-lg hover:bg-gray-50"
-                                >
-                                    힌트 찾기
-                                </button>
-                                <button 
-                                    onClick={() => handleButtonClick('개념 이해')}
-                                    className="w-full py-3 px-4 bg-white border-2 border-gray-200 rounded-lg hover:bg-gray-50"
-                                >
-                                    개념 이해
-                                </button>
-                                <button 
-                                    onClick={() => handleButtonClick('문제 해설')}
-                                    className="w-full py-3 px-4 bg-white border-2 border-gray-200 rounded-lg hover:bg-gray-50"
-                                >
-                                    문제 해설
-                                </button>
-                            </div>
+                    {!isAuthenticated ? (
+                        <div className="flex flex-col items-center justify-center gap-4">
+                            <input
+                                type="password"
+                                value={password}
+                                onChange={handlePasswordChange}
+                                placeholder="비밀번호를 입력하세요"
+                                className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                            <button 
+                                onClick={handleLogin}
+                                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                            >
+                                로그인
+                            </button>
                         </div>
                     ) : (
-                        // 채팅 인터페이스
                         <>
-                            <div className="flex-1 overflow-y-auto px-2">
-                                <div className="space-y-4 py-2">
-                                    {messages.map(message => (
-                                        <div 
-                                            key={message.id}
-                                            className={`flex ${message.isUser ? 'justify-end' : 'justify-start'}`}
+                            {showStartMenu ? (
+                                // 시작 메뉴
+                                <div className="flex-1 flex flex-col items-center justify-center gap-4">
+                                    <div className="text-xl mb-8 font-bold">무엇을 도와드릴까요?</div>
+                                    <div className="grid grid-cols-2 gap-4 w-full max-w-xs">
+                                        <button 
+                                            onClick={() => handleButtonClick('사용법')}
+                                            className="w-full py-3 px-4 bg-white border-2 border-gray-200 rounded-lg hover:bg-gray-50"
                                         >
-                                            <div 
-                                                className={`max-w-[70%] rounded-lg p-3 break-words ${
-                                                    message.isUser 
-                                                        ? 'bg-blue-500 text-white' 
-                                                        : 'bg-gray-100 text-gray-800'
+                                            사용법
+                                        </button>
+                                        <button 
+                                            onClick={() => handleButtonClick('힌트 찾기')}
+                                            className="w-full py-3 px-4 bg-white border-2 border-gray-200 rounded-lg hover:bg-gray-50"
+                                        >
+                                            힌트 찾기
+                                        </button>
+                                        <button 
+                                            onClick={() => handleButtonClick('개념 이해')}
+                                            className="w-full py-3 px-4 bg-white border-2 border-gray-200 rounded-lg hover:bg-gray-50"
+                                        >
+                                            개념 이해
+                                        </button>
+                                        <button 
+                                            onClick={() => handleButtonClick('문제 해설')}
+                                            className="w-full py-3 px-4 bg-white border-2 border-gray-200 rounded-lg hover:bg-gray-50"
+                                        >
+                                            문제 해설
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                                // 채팅 인터페이스
+                                <>
+                                    <div className="flex-1 overflow-y-auto px-2">
+                                        <div className="space-y-4 py-2">
+                                            {messages.map(message => (
+                                                <div 
+                                                    key={message.id}
+                                                    className={`flex ${message.isUser ? 'justify-end' : 'justify-start'}`}
+                                                >
+                                                    <div 
+                                                        className={`max-w-[70%] rounded-lg p-3 break-words ${
+                                                            message.isUser 
+                                                                ? 'bg-blue-500 text-white' 
+                                                                : 'bg-gray-100 text-gray-800'
+                                                        }`}
+                                                    >
+                                                        {message.text}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            {isLoading && (
+                                                <div className="flex justify-start">
+                                                    <div className="bg-gray-100 text-gray-800 rounded-lg p-3">
+                                                        입력 중...
+                                                    </div>
+                                                </div>
+                                            )}
+                                            <div ref={messagesEndRef} />
+                                        </div>
+                                    </div>
+                                    <div className="border-t pt-4 mt-4">
+                                        <div className="flex gap-2">
+                                            <input
+                                                type="text"
+                                                value={inputMessage}
+                                                onChange={(e) => setInputMessage(e.target.value)}
+                                                onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                                                placeholder="질문을 입력하세요"
+                                                className="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                disabled={isLoading}
+                                            />
+                                            <button 
+                                                onClick={handleSendMessage}
+                                                className={`px-4 py-2 text-white rounded-lg ${
+                                                    isLoading ? 'bg-gray-400' : 'bg-blue-500 hover:bg-blue-600'
                                                 }`}
+                                                disabled={isLoading}
                                             >
-                                                {message.text}
-                                            </div>
+                                                전송
+                                            </button>
                                         </div>
-                                    ))}
-                                    {isLoading && (
-                                        <div className="flex justify-start">
-                                            <div className="bg-gray-100 text-gray-800 rounded-lg p-3">
-                                                입력 중...
-                                            </div>
-                                        </div>
-                                    )}
-                                    <div ref={messagesEndRef} />
-                                </div>
-                            </div>
-                            <div className="border-t pt-4 mt-4">
-                                <div className="flex gap-2">
-                                    <input
-                                        type="text"
-                                        value={inputMessage}
-                                        onChange={(e) => setInputMessage(e.target.value)}
-                                        onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                                        placeholder="질문을 입력하세요"
-                                        className="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        disabled={isLoading}
-                                    />
-                                    <button 
-                                        onClick={handleSendMessage}
-                                        className={`px-4 py-2 text-white rounded-lg ${
-                                            isLoading ? 'bg-gray-400' : 'bg-blue-500 hover:bg-blue-600'
-                                        }`}
-                                        disabled={isLoading}
-                                    >
-                                        전송
-                                    </button>
-                                </div>
-                            </div>
+                                    </div>
+                                </>
+                            )}
                         </>
                     )}
                 </div>
